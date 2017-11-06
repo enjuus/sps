@@ -5,14 +5,15 @@ import
 	"fmt"
 	"github.com/godbus/dbus"
 	"os"
-	"encoding/json"
+  "strings"
 )
 
 const dest = "org.mpris.MediaPlayer2.spotify"
 const path = "/org/mpris/MediaPlayer2"
 const memb = "org.mrpis.MediaPlayer2.Player"
 
-func PerformAction(command string, conn *dbus.Conn) {
+func PerformAction(command string) {
+  conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
 	call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
 	if call.Err != nil {
@@ -21,61 +22,111 @@ func PerformAction(command string, conn *dbus.Conn) {
 	}
 }
 
+
 type Metadata struct {
-	TrackID string `json:"mpris:trackid"`
-	Length uint64 `json:"mpris:length"`
-	ArtUrl string `json:"mpris:artUrl"`
-	Album string `json:"xesam:album"`
-	AlbumArtist map[string]string `json:"xesam:albumArtist"`
-	Artist map[string]string `json:"xesam:artist"`
-	AutoRating float64 `json:"xesam:autoRating"`
-	DiscNumber int32 `json:"xesam:discNumber"`
-	Title string `json:"xesam:title"`
-	TrackNumber uint32 `json:"xesam:trackNumber"`
-	URL string `json:"xesam:url"`
+  Artist string
+  Title string
+  Rating int
+  Status string
+  Url string
+  ArtUrl string
+  ArtFile string
 }
 
-func CurrentlyPlaying(conn *dbus.Conn) {
+func (c *Metadata) Current() {
+  song := SongInfo()
+  pstatus := Status()
+  songData := song.Value().(map[string]dbus.Variant)
+  c.Artist = songData["xesam:artist"].Value().([]string)[0]
+  c.Title = songData["xesam:title"].Value().(string)
+  c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
+  c.Status = pstatus.Value().(string)
+  c.Url = songData["xesam:url"].Value().(string)
+  c.ArtUrl = songData["mpris:artUrl"].Value().(string)
+
+  idx := strings.LastIndex(c.ArtUrl, "/")
+  c.ArtFile = c.ArtUrl[idx+1:]
+}
+
+func Status() *dbus.Variant {
+	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
-	call := obj.Call("org.freedesktop.DBus.Properties.Get", 0, "org.mpris.MediaPlayer2.Player", "Metadata")
-	dat := fmt.Sprint(call.Body[0])
-	fmt.Println(dat)
-	// TODO: pls no more i  cant take it ffs
-	in := `{"mpris:artUrl": "https://open.spotify.com/image/ea5eaa59a06f0406e6e8619caad316d44fb781d7", "mpris:length": 280693000, "mpris:trackid": "spotify:track:36IIXP08n7pZGIeMa9ziqN", "xesam:album": "Kontakt", "xesam:albumArtist": ["Fjørt"], "xesam:artist": ["Fjørt"], "xesam:autoRating": 0.26, "xesam:discNumber": 1, "xesam:title": "Lebewohl", "xesam:trackNumber": 11, "xesam:url": "https://open.spotify.com/track/36IIXP08n7pZGIeMa9ziqN"}`
-	bytes, err := json.Marshal(in)
-	if err != nil {
-		panic(err)
-	}
+  pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
+  if err != nil {
+    panic(err)
+  }
+  return &pstatus
+}
 
-	var p Metadata
-	err = json.Unmarshal(bytes, &p)
-	if err != nil {
-		panic(err)
-	}
+func SongInfo() *dbus.Variant {
+	conn, _ := dbus.SessionBus()
+	obj := conn.Object(dest, path)
+	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
+  if err != nil {
+    panic(err)
+  }
 
-	fmt.Printf("&+v", p)
+  return &song
+}
+
+//TODO: fix listener
+func (c *Metadata) Listener() {
+	conn, _ := dbus.SessionBus()
+  for _, v := range []string{"signal"} {
+		call := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+			"eavesdrop='true',type='"+v+"',path='/org/mpris/MediaPlayer2'")
+		if call.Err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to add match:", call.Err)
+			os.Exit(1)
+		}
+  }
+  ch := make(chan *dbus.Message, 10)
+  conn.Eavesdrop(ch)
+  fmt.Println("Listening for everything")
+  for v := range ch {
+    if v != nil {
+      fmt.Println(v)
+      // add printing of current song here
+    } else {
+      fmt.Println("Something went very wrong.")
+    }
+  }
+}
+
+func (c *Metadata) Print() {
+  c.Current()
+  fmt.Printf("%s - %s", c.Artist, c.Title)
 }
 
 func main() {
+  S := new(Metadata)
 
-	conn, _ := dbus.SessionBus()
-
+  if os.Args[0] == nil {
+    S.Print()
+    os.Exit(0)
+  }
 	flag := os.Args[1]
-
 	opt := map[string]string{
 		"next":    "Next",
 		"prev":    "Previous",
 		"play":    "PlayPause",
 		"current": "current",
+		"listen": "listen",
 	}
 
+
 	if opt[flag] == "current" {
-		CurrentlyPlaying(conn)
+    S.Print()
 		os.Exit(0)
 	}
 
+  if opt[flag] == "listen" {
+    S.Listener()
+    os.Exit(0)
+  }
+
 	if opt[flag] != "" {
-		PerformAction(opt[flag], conn)
+		PerformAction(opt[flag])
 		os.Exit(0)
 	}
 
