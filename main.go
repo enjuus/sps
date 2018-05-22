@@ -132,7 +132,7 @@ func main() {
 		"listen":  "listen",
 		"url": "url",
 		"file": "file",
-		"album": "album"
+		"album": "album",
 	}
 
 	if opt[flag] == "current" {
