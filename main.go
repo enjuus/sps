@@ -100,17 +100,17 @@ func (c *Metadata) Print() {
 	fmt.Println(c.Artist, "-", c.Title)
 }
 
-func (c *Metadata) ArtUrl() {
+func (c *Metadata) PrintArtUrl() {
 	c.Current()
 	fmt.Println(c.ArtUrl)
 }
 
-func (c *Metadata) ArtFile() {
+func (c *Metadata) PrintArtFile() {
 	c.Current()
 	fmt.Println(c.ArtFile)
 }
 
-func (c *Metadata) Album() {
+func (c *Metadata) PrintAlbum() {
 	c.Current()
 	fmt.Println(c.Album)
 }
@@ -141,12 +141,17 @@ func main() {
 	}
 
 	if opt[flag] == "url" {
-		S.ArtUrl()
+		S.PrintArtUrl()
+		os.Exit(0)
+	}
+
+	if opt[flag] == "file" {
+		S.PrintArtFile()
 		os.Exit(0)
 	}
 
 	if opt[flag] == "album" {
-		S.Album()
+		S.PrintAlbum()
 		os.Exit(0)
 	}
 
