@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"github.com/godbus/dbus"
-	"os"
-	"strings"
+"fmt"
+"github.com/godbus/dbus"
+"os"
+"strings"
 )
 
 const dest = "org.mpris.MediaPlayer2.spotify"
@@ -29,6 +29,7 @@ type Metadata struct {
 	Url     string
 	ArtUrl  string
 	ArtFile string
+	Album 	string
 }
 
 func (c *Metadata) Current() {
@@ -37,7 +38,7 @@ func (c *Metadata) Current() {
 	songData := song.Value().(map[string]dbus.Variant)
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
-  c.Album = songData["xesam:album"].Value().(string)
+	c.Album = songData["xesam:album"].Value().(string)
 	c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
 	c.Status = pstatus.Value().(string)
 	c.Url = songData["xesam:url"].Value().(string)
@@ -100,13 +101,18 @@ func (c *Metadata) Print() {
 }
 
 func (c *Metadata) ArtUrl() {
-  c.Current()
-  fmt.Println(c.ArtUrl)
+	c.Current()
+	fmt.Println(c.ArtUrl)
 }
 
 func (c *Metadata) ArtFile() {
-  c.Current()
-  fmt.Println(c.ArtFile)
+	c.Current()
+	fmt.Println(c.ArtFile)
+}
+
+func (c *Metadata) Album() {
+	c.Current()
+	fmt.Println(c.Album)
 }
 
 func main() {
@@ -124,8 +130,9 @@ func main() {
 		"play":    "PlayPause",
 		"current": "current",
 		"listen":  "listen",
-    "url": "url",
-    "file": "file"
+		"url": "url",
+		"file": "file",
+		"album": "album"
 	}
 
 	if opt[flag] == "current" {
@@ -133,12 +140,16 @@ func main() {
 		os.Exit(0)
 	}
 
-  if(opt[flag] == "url" {
-    S.ArtUrl()
-    os.Exit(0)
-  }
+	if opt[flag] == "url" {
+		S.ArtUrl()
+		os.Exit(0)
+	}
 
-  if(opt[flag]
+	if opt[flag] == "album" {
+		S.Album()
+		os.Exit(0)
+	}
+
 
 	if opt[flag] == "listen" {
 		fmt.Println("come back later")
@@ -150,4 +161,3 @@ func main() {
 		os.Exit(0)
 	}
 
-}
