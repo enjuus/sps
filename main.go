@@ -1,10 +1,10 @@
 package main
 
 import (
-"fmt"
-"github.com/godbus/dbus"
-"os"
-"strings"
+	"fmt"
+	"github.com/godbus/dbus"
+	"os"
+	"strings"
 )
 
 const dest = "org.mpris.MediaPlayer2.spotify"
@@ -29,7 +29,7 @@ type Metadata struct {
 	Url     string
 	ArtUrl  string
 	ArtFile string
-	Album 	string
+	Album   string
 }
 
 func (c *Metadata) Current() {
@@ -130,9 +130,9 @@ func main() {
 		"play":    "PlayPause",
 		"current": "current",
 		"listen":  "listen",
-		"url": "url",
-		"file": "file",
-		"album": "album",
+		"url":     "url",
+		"file":    "file",
+		"album":   "album",
 	}
 
 	if opt[flag] == "current" {
@@ -150,7 +150,6 @@ func main() {
 		os.Exit(0)
 	}
 
-
 	if opt[flag] == "listen" {
 		fmt.Println("come back later")
 		os.Exit(0)
@@ -160,4 +159,4 @@ func main() {
 		PerformAction(opt[flag])
 		os.Exit(0)
 	}
-
+}
