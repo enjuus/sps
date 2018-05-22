@@ -37,6 +37,7 @@ func (c *Metadata) Current() {
 	songData := song.Value().(map[string]dbus.Variant)
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
+  c.Album = songData["xesam:album"].Value().(string)
 	c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
 	c.Status = pstatus.Value().(string)
 	c.Url = songData["xesam:url"].Value().(string)
@@ -98,6 +99,16 @@ func (c *Metadata) Print() {
 	fmt.Println(c.Artist, "-", c.Title)
 }
 
+func (c *Metadata) ArtUrl() {
+  c.Current()
+  fmt.Println(c.ArtUrl)
+}
+
+func (c *Metadata) ArtFile() {
+  c.Current()
+  fmt.Println(c.ArtFile)
+}
+
 func main() {
 	S := new(Metadata)
 
@@ -113,12 +124,21 @@ func main() {
 		"play":    "PlayPause",
 		"current": "current",
 		"listen":  "listen",
+    "url": "url",
+    "file": "file"
 	}
 
 	if opt[flag] == "current" {
 		S.Print()
 		os.Exit(0)
 	}
+
+  if(opt[flag] == "url" {
+    S.ArtUrl()
+    os.Exit(0)
+  }
+
+  if(opt[flag]
 
 	if opt[flag] == "listen" {
 		fmt.Println("come back later")
