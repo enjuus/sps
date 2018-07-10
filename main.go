@@ -12,7 +12,7 @@ import (
 	"github.com/godbus/dbus"
 )
 
-const dest = "org.mpris.MediaPlayer2.google-play-music-desktop-player"
+const dest = "org.mpris.MediaPlayer2.spotify"
 const path = "/org/mpris/MediaPlayer2"
 const memb = "org.mrpis.MediaPlayer2.Player"
 
@@ -21,7 +21,7 @@ func PerformAction(command string) {
 	obj := conn.Object(dest, path)
 	call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
 	if call.Err != nil {
-		fmt.Println("GPMDP is not running.")
+		fmt.Println("Spotify is not running.")
 		os.Exit(1)
 	}
 }
@@ -44,9 +44,9 @@ func (c *Metadata) Current() {
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
 	c.Album = songData["xesam:album"].Value().(string)
-	//c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
+	c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
 	c.Status = pstatus.Value().(string)
-	//c.Url = songData["xesam:url"].Value().(string)
+	c.Url = songData["xesam:url"].Value().(string)
 	c.ArtUrl = songData["mpris:artUrl"].Value().(string)
 
 	idx := strings.LastIndex(c.ArtUrl, "/")
@@ -58,7 +58,7 @@ func Status() *dbus.Variant {
 	obj := conn.Object(dest, path)
 	pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
 	if err != nil {
-		fmt.Println("GPMDP is not running.")
+		fmt.Println("Spotify is not running.")
 		os.Exit(1)
 	}
 	return &pstatus
@@ -69,7 +69,7 @@ func SongInfo() *dbus.Variant {
 	obj := conn.Object(dest, path)
 	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
 	if err != nil {
-		fmt.Println("GPMDP is not running.")
+		fmt.Println("Spotify is not running.")
 		os.Exit(1)
 	}
 
