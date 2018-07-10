@@ -119,6 +119,11 @@ func (c *Metadata) PrintAlbum() {
 	fmt.Println(c.Album)
 }
 
+func (c *Metadata) PrintStatus() {
+	c.Current()
+	fmt.Println(c.Status)
+}
+
 func main() {
 	S := new(Metadata)
 
@@ -137,6 +142,7 @@ func main() {
 		"url":     "url",
 		"file":    "file",
 		"album":   "album",
+		"status":  "status",
 	}
 
 	if opt[flag] == "current" {
@@ -161,6 +167,11 @@ func main() {
 
 	if opt[flag] == "listen" {
 		S.Listener()
+		os.Exit(0)
+	}
+
+	if opt[flag] == "status" {
+		S.PrintStatus()
 		os.Exit(0)
 	}
 
