@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/godbus/dbus"
 	"os"
 	"strings"
+
+	"github.com/godbus/dbus"
 )
 
-const dest = "org.mpris.MediaPlayer2.google-play-music-desktop-play"
+const dest = "org.mpris.MediaPlayer2.google-play-music-desktop-player"
 const path = "/org/mpris/MediaPlayer2"
 const memb = "org.mrpis.MediaPlayer2.Player"
 
@@ -64,7 +65,7 @@ func SongInfo() *dbus.Variant {
 	obj := conn.Object(dest, path)
 	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
 	if err != nil {
-		fmt.Println("Spotify is not running.")
+		fmt.Println("GPMDP is not running.")
 		os.Exit(1)
 	}
 
@@ -119,6 +120,11 @@ func (c *Metadata) PrintAlbum() {
 	fmt.Println(c.Album)
 }
 
+func (c *Metadata) PrintStatus() {
+	c.Current()
+	fmt.Println(c.Status)
+}
+
 func main() {
 	S := new(Metadata)
 
@@ -137,6 +143,7 @@ func main() {
 		"url":     "url",
 		"file":    "file",
 		"album":   "album",
+		"status":  "status",
 	}
 
 	if opt[flag] == "current" {
@@ -161,6 +168,11 @@ func main() {
 
 	if opt[flag] == "listen" {
 		S.Listener()
+		os.Exit(0)
+	}
+
+	if opt[flag] == "status" {
+		S.PrintStatus()
 		os.Exit(0)
 	}
 
