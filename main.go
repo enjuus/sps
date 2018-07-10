@@ -74,21 +74,25 @@ func SongInfo() *dbus.Variant {
 //TODO: fix listener
 func (c *Metadata) Listener() {
 	conn, _ := dbus.SessionBus()
-	for _, v := range []string{"method_call", "method_return", "error", "signal"} {
-		call := conn.BusObject().Call("org.mpris.MediaPlayer2.Player", 0,
-			"eavesdrop='true', type='"+v+"'")
-		if call.Err != nil {
-			fmt.Println(os.Stderr, "failed to add match: ", call.Err)
-			os.Exit(1)
-		}
+	call := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+		"sender='"+dest+"', path='/org/mpris/MediaPlayer2', type='signal', member='PropertiesChanged'")
+	if call.Err != nil {
+		fmt.Println(os.Stderr, "failed to add match: ", call.Err)
+		os.Exit(1)
 	}
-	ch := make(chan *dbus.Message, 10)
-	conn.Eavesdrop(ch)
-	fmt.Println("Listening for everything")
+	ch := make(chan *dbus.Signal, 5)
+	conn.Signal(ch)
+	c.Print()
+	current := fmt.Sprintf("%s - %s", c.Artist, c.Title)
 	for v := range ch {
 		if v != nil {
-			fmt.Println(v)
-			// add printing of current song here
+			// Not the nicest solution to do it this way, but dbus
+			// keeps giving out multiple signals
+			c.Current()
+			if current != fmt.Sprintf("%s - %s", c.Artist, c.Title) {
+				c.Print()
+				current = fmt.Sprintf("%s - %s", c.Artist, c.Title)
+			}
 		} else {
 			fmt.Println("Something went very wrong.")
 		}
@@ -156,7 +160,7 @@ func main() {
 	}
 
 	if opt[flag] == "listen" {
-		fmt.Println("come back later")
+		S.Listener()
 		os.Exit(0)
 	}
 
