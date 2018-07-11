@@ -2,9 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/godbus/dbus"
+	"io"
+	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
+
+	"github.com/godbus/dbus"
 )
 
 const dest = "org.mpris.MediaPlayer2.spotify"
@@ -71,6 +76,32 @@ func SongInfo() *dbus.Variant {
 	return &song
 }
 
+func DownloadFile(filename string, url string) error {
+
+	usr, _ := user.Current()
+	dir := usr.HomeDir
+	path := filepath.Join(dir+"/", filename)
+
+	out, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 //TODO: fix listener
 func (c *Metadata) Listener() {
 	conn, _ := dbus.SessionBus()
@@ -91,6 +122,7 @@ func (c *Metadata) Listener() {
 			c.Current()
 			if current != fmt.Sprintf("%s - %s", c.Artist, c.Title) {
 				c.Print()
+				c.GetAlbumArt()
 				current = fmt.Sprintf("%s - %s", c.Artist, c.Title)
 			}
 		} else {
@@ -117,6 +149,14 @@ func (c *Metadata) PrintArtFile() {
 func (c *Metadata) PrintAlbum() {
 	c.Current()
 	fmt.Println(c.Album)
+}
+
+func (c *Metadata) GetAlbumArt() {
+	c.Current()
+	err := DownloadFile("np.png", c.ArtUrl)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c *Metadata) PrintStatus() {
@@ -156,7 +196,7 @@ func main() {
 	}
 
 	if opt[flag] == "file" {
-		S.PrintArtFile()
+		S.GetAlbumArt()
 		os.Exit(0)
 	}
 
