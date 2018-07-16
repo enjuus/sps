@@ -1,6 +1,6 @@
 # sps
 
-A CLI tool to control Spotify and Google Play Music via DBus on Linux
+A CLI tool to control Spotify and [GPMDP](https://www.googleplaymusicdesktopplayer.com/) via DBus on Linux
 
 ## Installation
 
