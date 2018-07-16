@@ -21,8 +21,18 @@ func PerformAction(command string) {
 	obj := conn.Object(dest, path)
 	call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
 	if call.Err != nil {
-		fmt.Println("Spotify is not running.")
-		os.Exit(1)
+		switch call.Err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
+			if call.Err != nil {
+				fmt.Println("No media player is not running.")
+				os.Exit(1)
+			}
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
 	}
 }
 
@@ -44,9 +54,13 @@ func (c *Metadata) Current() {
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
 	c.Album = songData["xesam:album"].Value().(string)
-	c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
+	if songData["xesam:autoRating"].Value() != nil {
+		c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
+	}
 	c.Status = pstatus.Value().(string)
-	c.Url = songData["xesam:url"].Value().(string)
+	if songData["xesam:url"].Value() != nil {
+		c.Url = songData["xesam:url"].Value().(string)
+	}
 	c.ArtUrl = songData["mpris:artUrl"].Value().(string)
 
 	idx := strings.LastIndex(c.ArtUrl, "/")
@@ -58,8 +72,19 @@ func Status() *dbus.Variant {
 	obj := conn.Object(dest, path)
 	pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
 	if err != nil {
-		fmt.Println("Spotify is not running.")
-		os.Exit(1)
+		switch err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
+			if err != nil {
+				fmt.Println("No media player is not running.")
+				os.Exit(1)
+			}
+			return &pstatus
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
 	}
 	return &pstatus
 }
@@ -69,10 +94,20 @@ func SongInfo() *dbus.Variant {
 	obj := conn.Object(dest, path)
 	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
 	if err != nil {
-		fmt.Println("Spotify is not running.")
-		os.Exit(1)
+		switch err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
+			if err != nil {
+				fmt.Println("No media player is not running.")
+				os.Exit(1)
+			}
+			return &song
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
 	}
-
 	return &song
 }
 
