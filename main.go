@@ -140,10 +140,18 @@ func DownloadFile(filename string, url string) error {
 //TODO: fix listener
 func (c *Metadata) Listener() {
 	conn, _ := dbus.SessionBus()
-	call := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+	sptfy := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
 		"sender='"+dest+"', path='/org/mpris/MediaPlayer2', type='signal', member='PropertiesChanged'")
-	if call.Err != nil {
-		fmt.Println(os.Stderr, "failed to add match: ", call.Err)
+	gpmdp := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
+		"sender='org.mpris.MediaPlayer2.google-play-music-desktop-player', path='/org/mpris/MediaPlayer2', type='signal', member='PropertiesChanged'")
+	//apparently we never go here?
+	if sptfy.Err != nil { //apparently we never go here?
+		fmt.Println(os.Stderr, "failed to add match: ", sptfy.Err)
+		os.Exit(1)
+	}
+	//or here
+	if gpmdp.Err != nil {
+		fmt.Println(os.Stderr, "failed to add match: ", gpmdp.Err)
 		os.Exit(1)
 	}
 	ch := make(chan *dbus.Signal, 5)
