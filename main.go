@@ -26,7 +26,7 @@ func PerformAction(command string) {
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
 			call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
 			if call.Err != nil {
-				fmt.Println("No media player is not running.")
+				fmt.Println("No media player is currently running")
 				os.Exit(1)
 			}
 		default:
@@ -77,7 +77,7 @@ func Status() *dbus.Variant {
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
 			pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
 			if err != nil {
-				fmt.Println("No media player is not running.")
+				fmt.Println("No media player is currently running")
 				os.Exit(1)
 			}
 			return &pstatus
@@ -99,7 +99,7 @@ func SongInfo() *dbus.Variant {
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
 			song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
 			if err != nil {
-				fmt.Println("No media player is not running.")
+				fmt.Println("No media player is currently running")
 				os.Exit(1)
 			}
 			return &song
