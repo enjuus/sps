@@ -8,10 +8,9 @@ Install with
 
 `go get github.com/enjuus/sps`
 
-
 ## Usage
 
-```
+```man
 Usage: sps [option]
 
 arguments:

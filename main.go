@@ -16,7 +16,7 @@ const dest = "org.mpris.MediaPlayer2.spotify"
 const path = "/org/mpris/MediaPlayer2"
 const memb = "org.mrpis.MediaPlayer2.Player"
 
-func PerformAction(command string) {
+func performAction(command string) {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
 	call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
@@ -36,20 +36,20 @@ func PerformAction(command string) {
 	}
 }
 
-type Metadata struct {
+type metadata struct {
 	Artist  string
 	Title   string
 	Rating  int
 	Status  string
-	Url     string
-	ArtUrl  string
+	URL     string
+	ArtURL  string
 	ArtFile string
 	Album   string
 }
 
-func (c *Metadata) Current() {
-	song := SongInfo()
-	pstatus := Status()
+func (c *metadata) current() {
+	song := songInfo()
+	pstatus := status()
 	songData := song.Value().(map[string]dbus.Variant)
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
@@ -59,15 +59,15 @@ func (c *Metadata) Current() {
 	}
 	c.Status = pstatus.Value().(string)
 	if songData["xesam:url"].Value() != nil {
-		c.Url = songData["xesam:url"].Value().(string)
+		c.URL = songData["xesam:url"].Value().(string)
 	}
-	c.ArtUrl = songData["mpris:artUrl"].Value().(string)
+	c.ArtURL = songData["mpris:artUrl"].Value().(string)
 
-	idx := strings.LastIndex(c.ArtUrl, "/")
-	c.ArtFile = c.ArtUrl[idx+1:]
+	idx := strings.LastIndex(c.ArtURL, "/")
+	c.ArtFile = c.ArtURL[idx+1:]
 }
 
-func Status() *dbus.Variant {
+func status() *dbus.Variant {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
 	pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
@@ -89,7 +89,7 @@ func Status() *dbus.Variant {
 	return &pstatus
 }
 
-func SongInfo() *dbus.Variant {
+func songInfo() *dbus.Variant {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
 	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
@@ -111,7 +111,7 @@ func SongInfo() *dbus.Variant {
 	return &song
 }
 
-func DownloadFile(filename string, url string) error {
+func downloadFile(filename string, url string) error {
 
 	usr, _ := user.Current()
 	dir := usr.HomeDir
@@ -138,7 +138,7 @@ func DownloadFile(filename string, url string) error {
 }
 
 //TODO: fix listener
-func (c *Metadata) Listener() {
+func (c *metadata) listener() {
 	conn, _ := dbus.SessionBus()
 	sptfy := conn.BusObject().Call("org.freedesktop.DBus.AddMatch", 0,
 		"sender='"+dest+"', path='/org/mpris/MediaPlayer2', type='signal', member='PropertiesChanged'")
@@ -156,16 +156,16 @@ func (c *Metadata) Listener() {
 	}
 	ch := make(chan *dbus.Signal, 5)
 	conn.Signal(ch)
-	c.Print()
+	c.print()
 	current := fmt.Sprintf("%s - %s", c.Artist, c.Title)
 	for v := range ch {
 		if v != nil {
 			// Not the nicest solution to do it this way, but dbus
 			// keeps giving out multiple signals
-			c.Current()
+			c.current()
 			if current != fmt.Sprintf("%s - %s", c.Artist, c.Title) {
-				c.Print()
-				c.GetAlbumArt()
+				c.print()
+				c.getAlbumArt()
 				current = fmt.Sprintf("%s - %s", c.Artist, c.Title)
 			}
 		} else {
@@ -174,44 +174,44 @@ func (c *Metadata) Listener() {
 	}
 }
 
-func (c *Metadata) Print() {
-	c.Current()
+func (c *metadata) print() {
+	c.current()
 	fmt.Println(c.Artist, "-", c.Title)
 }
 
-func (c *Metadata) PrintArtUrl() {
-	c.Current()
-	fmt.Println(c.ArtUrl)
+func (c *metadata) printArtURL() {
+	c.current()
+	fmt.Println(c.ArtURL)
 }
 
-func (c *Metadata) PrintArtFile() {
-	c.Current()
+func (c *metadata) PrintArtFile() {
+	c.current()
 	fmt.Println(c.ArtFile)
 }
 
-func (c *Metadata) PrintAlbum() {
-	c.Current()
+func (c *metadata) PrintAlbum() {
+	c.current()
 	fmt.Println(c.Album)
 }
 
-func (c *Metadata) GetAlbumArt() {
-	c.Current()
-	err := DownloadFile("np.png", c.ArtUrl)
+func (c *metadata) getAlbumArt() {
+	c.current()
+	err := downloadFile("np.png", c.ArtURL)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (c *Metadata) PrintStatus() {
-	c.Current()
+func (c *metadata) printStatus() {
+	c.current()
 	fmt.Println(c.Status)
 }
 
 func main() {
-	S := new(Metadata)
+	S := new(metadata)
 
 	if len(os.Args) == 1 {
-		S.Print()
+		S.print()
 		os.Exit(0)
 	}
 
@@ -229,17 +229,17 @@ func main() {
 	}
 
 	if opt[flag] == "current" {
-		S.Print()
+		S.print()
 		os.Exit(0)
 	}
 
 	if opt[flag] == "url" {
-		S.PrintArtUrl()
+		S.printArtURL()
 		os.Exit(0)
 	}
 
 	if opt[flag] == "file" {
-		S.GetAlbumArt()
+		S.getAlbumArt()
 		os.Exit(0)
 	}
 
@@ -249,17 +249,17 @@ func main() {
 	}
 
 	if opt[flag] == "listen" {
-		S.Listener()
+		S.listener()
 		os.Exit(0)
 	}
 
 	if opt[flag] == "status" {
-		S.PrintStatus()
+		S.printStatus()
 		os.Exit(0)
 	}
 
 	if opt[flag] != "" {
-		PerformAction(opt[flag])
+		performAction(opt[flag])
 		os.Exit(0)
 	}
 }
