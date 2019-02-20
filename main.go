@@ -7,14 +7,18 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"log"
 
 	"github.com/godbus/dbus"
-)
+	"github.com/urfave/cli"
+	)
 
 const dest = "org.mpris.MediaPlayer2.spotify"
 const path = "/org/mpris/MediaPlayer2"
-const memb = "org.mrpis.MediaPlayer2.Player"
+const memb = "org.mpris.MediaPlayer2.Player"
 
 func performAction(command string) {
 	conn, _ := dbus.SessionBus()
@@ -26,7 +30,7 @@ func performAction(command string) {
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
 			call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
 			if call.Err != nil {
-				fmt.Println("No media player is currently running")
+				fmt.Println("No media player is currently running - GPMDP")
 				os.Exit(1)
 			}
 		default:
@@ -45,15 +49,19 @@ type metadata struct {
 	ArtURL  string
 	ArtFile string
 	Album   string
+	Volume  int
 }
 
 func (c *metadata) current() {
 	song := songInfo()
 	pstatus := status()
+	volume := volumeInfo()
+
 	songData := song.Value().(map[string]dbus.Variant)
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
 	c.Album = songData["xesam:album"].Value().(string)
+	c.Volume = int(volume.Value().(float64) * 100)
 	if songData["xesam:autoRating"].Value() != nil {
 		c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
 	}
@@ -109,6 +117,28 @@ func songInfo() *dbus.Variant {
 		}
 	}
 	return &song
+}
+
+func volumeInfo() *dbus.Variant {
+	conn, _ := dbus.SessionBus()
+	obj := conn.Object(dest, path)
+	volume, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Volume")
+	if err != nil {
+		switch err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			volume, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Volume")
+			if err != nil {
+				fmt.Println("No media player is currently running")
+				os.Exit(1)
+			}
+			return &volume
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
+	}
+	return &volume
 }
 
 func downloadFile(filename string, url string) error {
@@ -207,6 +237,12 @@ func (c *metadata) printStatus() {
 	fmt.Println(c.Status)
 }
 
+func (c *metadata) getVolume() {
+	c.current()
+	fmt.Println(strconv.Itoa(c.Volume)+"%")
+}
+
+
 func main() {
 	S := new(metadata)
 
@@ -215,51 +251,93 @@ func main() {
 		os.Exit(0)
 	}
 
-	flag := os.Args[1]
-	opt := map[string]string{
-		"next":    "Next",
-		"prev":    "Previous",
-		"play":    "PlayPause",
-		"current": "current",
-		"listen":  "listen",
-		"url":     "url",
-		"file":    "file",
-		"album":   "album",
-		"status":  "status",
+	app := cli.NewApp()
+	app.Name = "sps"
+	app.Usage = "Commandline interface to Spotify/GPMDP"
+	app.UsageText = "sps [command]"
+	app.HideVersion = true
+	app.Commands = []cli.Command {
+		{
+			Name: "current",
+			Usage: "Returns currently playing song",
+			Action: func(c *cli.Context) error {
+				S.print()
+				return nil
+			},
+		},
+		{
+			Name: "listen",
+			Usage: "Starts in listening mode",
+			Action: func(c *cli.Context) error {
+				S.listener()
+				return nil
+			},
+		},
+		{
+			Name: "url",
+			Usage: "Print URL to album art",
+			Action: func(c *cli.Context) error {
+				S.printArtURL()
+				return nil
+			},
+		},
+		{
+			Name: "file",
+			Usage: "Downloads the album art",
+			Action: func(c *cli.Context) error {
+				S.getAlbumArt()
+				return nil
+			},
+		},
+		{
+			Name: "album",
+			Usage: "Print the album of the currently playing song",
+			Action: func(c *cli.Context) error {
+				S.PrintAlbum()
+				return nil
+			},
+		},
+		{
+			Name: "status",
+			Usage: "Print the player status",
+			Action: func(c *cli.Context) error {
+				S.printStatus()
+				return nil
+			},
+		},
+		{
+			Name: "volume",
+			Aliases: []string{"vol"},
+			Usage: "Show the current player volume",
+			Action: func(c *cli.Context) error {
+				S.getVolume()
+				return nil
+			},
+		},
+		{
+			Name: "next",
+			Aliases: []string{"n"},
+			Usage: "Skips to next song",
+			Action: func(c *cli.Context) error {
+				performAction("Next")
+				return nil
+			},
+		},
+		{
+			Name: "previous",
+			Aliases: []string{"p"},
+			Usage: "Skips to the previous song",
+			Action: func(c *cli.Context) error {
+				performAction("Previous")
+				return nil
+			},
+		},
+	}
+	sort.Sort(cli.CommandsByName(app.Commands))
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	if opt[flag] == "current" {
-		S.print()
-		os.Exit(0)
-	}
-
-	if opt[flag] == "url" {
-		S.printArtURL()
-		os.Exit(0)
-	}
-
-	if opt[flag] == "file" {
-		S.getAlbumArt()
-		os.Exit(0)
-	}
-
-	if opt[flag] == "album" {
-		S.PrintAlbum()
-		os.Exit(0)
-	}
-
-	if opt[flag] == "listen" {
-		S.listener()
-		os.Exit(0)
-	}
-
-	if opt[flag] == "status" {
-		S.printStatus()
-		os.Exit(0)
-	}
-
-	if opt[flag] != "" {
-		performAction(opt[flag])
-		os.Exit(0)
-	}
 }
