@@ -283,7 +283,7 @@ func main() {
 		},
 		{
 			Name: "file",
-			Usage: "Downloads the album art",
+			Usage: "Downloads the album art to $HOME/np.png",
 			Action: func(c *cli.Context) error {
 				S.getAlbumArt()
 				return nil
