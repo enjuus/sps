@@ -23,12 +23,12 @@ const memb = "org.mpris.MediaPlayer2.Player"
 func performAction(command string) {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
-	call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
+	call := obj.Call(memb+"."+command, 0)
 	if call.Err != nil {
 		switch call.Err.(type) {
 		case dbus.Error:
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			call := obj.Call("org.mpris.MediaPlayer2.Player."+command, 0)
+			call := obj.Call(memb+"."+command, 0)
 			if call.Err != nil {
 				fmt.Println("No media player is currently running - GPMDP")
 				os.Exit(1)
