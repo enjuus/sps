@@ -1,8 +1,10 @@
 package main
 
+import "C"
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/user"
@@ -10,35 +12,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"log"
 
 	"github.com/godbus/dbus"
 	"github.com/urfave/cli"
-	)
+)
 
 const dest = "org.mpris.MediaPlayer2.spotify"
 const path = "/org/mpris/MediaPlayer2"
 const memb = "org.mpris.MediaPlayer2.Player"
-
-func performAction(command string) {
-	conn, _ := dbus.SessionBus()
-	obj := conn.Object(dest, path)
-	call := obj.Call(memb+"."+command, 0)
-	if call.Err != nil {
-		switch call.Err.(type) {
-		case dbus.Error:
-			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			call := obj.Call(memb+"."+command, 0)
-			if call.Err != nil {
-				fmt.Println("No media player is currently running - GPMDP")
-				os.Exit(1)
-			}
-		default:
-			fmt.Println("What the h* just happened?")
-			os.Exit(1)
-		}
-	}
-}
 
 type metadata struct {
 	Artist  string
@@ -52,12 +33,55 @@ type metadata struct {
 	Volume  int
 }
 
-func (c *metadata) current() {
-	song := songInfo()
-	pstatus := status()
-	volume := volumeInfo()
+func performAction(command string) {
+	conn, _ := dbus.SessionBus()
+	obj := conn.Object(dest, path)
+	call := obj.Call(memb+"."+command, 0)
+	if call.Err != nil {
+		switch call.Err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			call := obj.Call(memb+"."+command, 0)
+			fmt.Println(call.Done)
+			if call.Err != nil {
+				fmt.Println("No media player is currently running")
+				os.Exit(1)
+			}
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
+	}
+}
 
-	songData := song.Value().(map[string]dbus.Variant)
+func retrieveInfo(info string) *dbus.Variant {
+	conn, _ := dbus.SessionBus()
+	obj := conn.Object(dest, path)
+	playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player."+info)
+	if err != nil {
+		switch err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+			playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player."+info)
+			if err != nil {
+				fmt.Println("No media player is currently running")
+				os.Exit(1)
+			}
+			return &playerinfo
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
+	}
+	return &playerinfo
+}
+
+func (c *metadata) current() {
+	song := retrieveInfo("Metadata")
+	pstatus := retrieveInfo("PlaybackStatus")
+	volume := retrieveInfo("Volume")
+
+	songData, _  := song.Value().(map[string]dbus.Variant)
 	c.Artist = songData["xesam:artist"].Value().([]string)[0]
 	c.Title = songData["xesam:title"].Value().(string)
 	c.Album = songData["xesam:album"].Value().(string)
@@ -73,72 +97,6 @@ func (c *metadata) current() {
 
 	idx := strings.LastIndex(c.ArtURL, "/")
 	c.ArtFile = c.ArtURL[idx+1:]
-}
-
-func status() *dbus.Variant {
-	conn, _ := dbus.SessionBus()
-	obj := conn.Object(dest, path)
-	pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
-	if err != nil {
-		switch err.(type) {
-		case dbus.Error:
-			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			pstatus, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
-			if err != nil {
-				fmt.Println("No media player is currently running")
-				os.Exit(1)
-			}
-			return &pstatus
-		default:
-			fmt.Println("What the h* just happened?")
-			os.Exit(1)
-		}
-	}
-	return &pstatus
-}
-
-func songInfo() *dbus.Variant {
-	conn, _ := dbus.SessionBus()
-	obj := conn.Object(dest, path)
-	song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
-	if err != nil {
-		switch err.(type) {
-		case dbus.Error:
-			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			song, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Metadata")
-			if err != nil {
-				fmt.Println("No media player is currently running")
-				os.Exit(1)
-			}
-			return &song
-		default:
-			fmt.Println("What the h* just happened?")
-			os.Exit(1)
-		}
-	}
-	return &song
-}
-
-func volumeInfo() *dbus.Variant {
-	conn, _ := dbus.SessionBus()
-	obj := conn.Object(dest, path)
-	volume, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Volume")
-	if err != nil {
-		switch err.(type) {
-		case dbus.Error:
-			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			volume, err := obj.GetProperty("org.mpris.MediaPlayer2.Player.Volume")
-			if err != nil {
-				fmt.Println("No media player is currently running")
-				os.Exit(1)
-			}
-			return &volume
-		default:
-			fmt.Println("What the h* just happened?")
-			os.Exit(1)
-		}
-	}
-	return &volume
 }
 
 func downloadFile(filename string, url string) error {
@@ -206,22 +164,7 @@ func (c *metadata) listener() {
 
 func (c *metadata) print() {
 	c.current()
-	fmt.Println(c.Artist, "-", c.Title)
-}
-
-func (c *metadata) printArtURL() {
-	c.current()
-	fmt.Println(c.ArtURL)
-}
-
-func (c *metadata) PrintArtFile() {
-	c.current()
-	fmt.Println(c.ArtFile)
-}
-
-func (c *metadata) PrintAlbum() {
-	c.current()
-	fmt.Println(c.Album)
+	fmt.Println(c.Artist+" - "+c.Title)
 }
 
 func (c *metadata) getAlbumArt() {
@@ -232,21 +175,11 @@ func (c *metadata) getAlbumArt() {
 	}
 }
 
-func (c *metadata) printStatus() {
-	c.current()
-	fmt.Println(c.Status)
-}
-
-func (c *metadata) getVolume() {
-	c.current()
-	fmt.Println(strconv.Itoa(c.Volume)+"%")
-}
-
-
 func main() {
 	S := new(metadata)
 
 	if len(os.Args) == 1 {
+		S.current()
 		S.print()
 		os.Exit(0)
 	}
@@ -277,7 +210,8 @@ func main() {
 			Name: "url",
 			Usage: "Print URL to album art",
 			Action: func(c *cli.Context) error {
-				S.printArtURL()
+				S.current()
+				fmt.Println(S.ArtURL)
 				return nil
 			},
 		},
@@ -293,7 +227,8 @@ func main() {
 			Name: "album",
 			Usage: "Print the album of the currently playing song",
 			Action: func(c *cli.Context) error {
-				S.PrintAlbum()
+				S.current()
+				fmt.Println(S.Album)
 				return nil
 			},
 		},
@@ -301,7 +236,8 @@ func main() {
 			Name: "status",
 			Usage: "Print the player status",
 			Action: func(c *cli.Context) error {
-				S.printStatus()
+				S.current()
+				fmt.Println(S.Status)
 				return nil
 			},
 		},
@@ -310,7 +246,8 @@ func main() {
 			Aliases: []string{"vol"},
 			Usage: "Show the current player volume",
 			Action: func(c *cli.Context) error {
-				S.getVolume()
+				S.current()
+				fmt.Println(strconv.Itoa(S.Volume)+"%")
 				return nil
 			},
 		},
