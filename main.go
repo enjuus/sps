@@ -81,22 +81,24 @@ func (c *metadata) current() {
 	pstatus := retrieveInfo("PlaybackStatus")
 	volume := retrieveInfo("Volume")
 
-	songData, _  := song.Value().(map[string]dbus.Variant)
-	c.Artist = songData["xesam:artist"].Value().([]string)[0]
-	c.Title = songData["xesam:title"].Value().(string)
-	c.Album = songData["xesam:album"].Value().(string)
-	c.Volume = int(volume.Value().(float64) * 100)
-	if songData["xesam:autoRating"].Value() != nil {
-		c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
-	}
-	c.Status = pstatus.Value().(string)
-	if songData["xesam:url"].Value() != nil {
-		c.URL = songData["xesam:url"].Value().(string)
-	}
-	c.ArtURL = songData["mpris:artUrl"].Value().(string)
+	songData, _ := song.Value().(map[string]dbus.Variant)
+	if songData["xesam:artist"].Value() != nil {
+		c.Artist = songData["xesam:artist"].Value().([]string)[0]
+		c.Title = songData["xesam:title"].Value().(string)
+		c.Album = songData["xesam:album"].Value().(string)
+		c.Volume = int(volume.Value().(float64) * 100)
+		if songData["xesam:autoRating"].Value() != nil {
+			c.Rating = int(songData["xesam:autoRating"].Value().(float64) * 100)
+		}
+		c.Status = pstatus.Value().(string)
+		if songData["xesam:url"].Value() != nil {
+			c.URL = songData["xesam:url"].Value().(string)
+		}
+		c.ArtURL = songData["mpris:artUrl"].Value().(string)
 
-	idx := strings.LastIndex(c.ArtURL, "/")
-	c.ArtFile = c.ArtURL[idx+1:]
+		idx := strings.LastIndex(c.ArtURL, "/")
+		c.ArtFile = c.ArtURL[idx+1:]
+	} else { log.Println("Start playing a song..")}
 }
 
 func downloadFile(filename string, url string) error {
