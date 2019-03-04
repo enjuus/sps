@@ -33,6 +33,7 @@ type metadata struct {
 	Volume  int
 }
 
+// Perform a command/dbus method against the MediaPlayer2 interface
 func performAction(command string) {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
@@ -54,6 +55,7 @@ func performAction(command string) {
 	}
 }
 
+// Retrieve info dbus.Property
 func retrieveInfo(info string) *dbus.Variant {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
@@ -76,6 +78,7 @@ func retrieveInfo(info string) *dbus.Variant {
 	return &playerinfo
 }
 
+// Update metadata for the currently playing song
 func (c *metadata) current() {
 	song := retrieveInfo("Metadata")
 	pstatus := retrieveInfo("PlaybackStatus")
