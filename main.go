@@ -59,12 +59,12 @@ func performAction(command string) {
 func retrieveInfo(info string) *dbus.Variant {
 	conn, _ := dbus.SessionBus()
 	obj := conn.Object(dest, path)
-	playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player."+info)
+	playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player." + info)
 	if err != nil {
 		switch err.(type) {
 		case dbus.Error:
 			obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
-			playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player."+info)
+			playerinfo, err := obj.GetProperty("org.mpris.MediaPlayer2.Player." + info)
 			if err != nil {
 				fmt.Println("No media player is currently running")
 				os.Exit(1)
@@ -101,7 +101,9 @@ func (c *metadata) current() {
 
 		idx := strings.LastIndex(c.ArtURL, "/")
 		c.ArtFile = c.ArtURL[idx+1:]
-	} else { log.Println("Start playing a song..")}
+	} else {
+		log.Println("Start playing a song..")
+	}
 }
 
 func downloadFile(filename string, url string) error {
@@ -169,7 +171,7 @@ func (c *metadata) listener() {
 
 func (c *metadata) print() {
 	c.current()
-	fmt.Println(c.Artist+" - "+c.Title)
+	fmt.Println(c.Artist + " - " + c.Title)
 }
 
 func (c *metadata) getAlbumArt() {
@@ -194,9 +196,9 @@ func main() {
 	app.Usage = "Commandline interface to Spotify/GPMDP"
 	app.UsageText = "sps [command]"
 	app.HideVersion = true
-	app.Commands = []cli.Command {
+	app.Commands = []cli.Command{
 		{
-			Name: "current",
+			Name:  "current",
 			Usage: "Returns currently playing song",
 			Action: func(c *cli.Context) error {
 				S.print()
@@ -204,7 +206,7 @@ func main() {
 			},
 		},
 		{
-			Name: "listen",
+			Name:  "listen",
 			Usage: "Starts in listening mode",
 			Action: func(c *cli.Context) error {
 				S.listener()
@@ -212,7 +214,7 @@ func main() {
 			},
 		},
 		{
-			Name: "url",
+			Name:  "url",
 			Usage: "Print URL to album art",
 			Action: func(c *cli.Context) error {
 				S.current()
@@ -221,7 +223,7 @@ func main() {
 			},
 		},
 		{
-			Name: "file",
+			Name:  "file",
 			Usage: "Downloads the album art to $HOME/np.png",
 			Action: func(c *cli.Context) error {
 				S.getAlbumArt()
@@ -229,7 +231,7 @@ func main() {
 			},
 		},
 		{
-			Name: "album",
+			Name:  "album",
 			Usage: "Print the album of the currently playing song",
 			Action: func(c *cli.Context) error {
 				S.current()
@@ -238,7 +240,7 @@ func main() {
 			},
 		},
 		{
-			Name: "status",
+			Name:  "status",
 			Usage: "Print the player status",
 			Action: func(c *cli.Context) error {
 				S.current()
@@ -247,30 +249,54 @@ func main() {
 			},
 		},
 		{
-			Name: "volume",
+			Name:    "volume",
 			Aliases: []string{"vol"},
-			Usage: "Show the current player volume",
+			Usage:   "Show the current player volume",
 			Action: func(c *cli.Context) error {
 				S.current()
-				fmt.Println(strconv.Itoa(S.Volume)+"%")
+				fmt.Println(strconv.Itoa(S.Volume) + "%")
 				return nil
 			},
 		},
 		{
-			Name: "next",
+			Name:    "next",
 			Aliases: []string{"n"},
-			Usage: "Skips to next song",
+			Usage:   "Skips to next song",
 			Action: func(c *cli.Context) error {
 				performAction("Next")
 				return nil
 			},
 		},
 		{
-			Name: "previous",
+			Name:    "previous",
 			Aliases: []string{"p"},
-			Usage: "Skips to the previous song",
+			Usage:   "Skips to the previous song",
 			Action: func(c *cli.Context) error {
 				performAction("Previous")
+				return nil
+			},
+		}, {
+			Name:  "pause",
+			Usage: "Pauses Playback",
+			Action: func(c *cli.Context) error {
+				performAction("Pause")
+				return nil
+			},
+		},
+		{
+			Name:  "play",
+			Usage: "Begins or Resumes Playback",
+			Action: func(c *cli.Context) error {
+				performAction("Play")
+				return nil
+			},
+		},
+		{
+			Name:    "toggle",
+			Aliases: []string{"t"},
+			Usage:   "Toggles  Playback",
+			Action: func(c *cli.Context) error {
+				performAction("PlayPause")
 				return nil
 			},
 		},
