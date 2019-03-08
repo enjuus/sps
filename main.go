@@ -285,7 +285,7 @@ func main() {
 		},
 		{
 			Name:  "play",
-			Usage: "Begins or ResumesPlayback",
+			Usage: "Begins or Resumes Playback",
 			Action: func(c *cli.Context) error {
 				performAction("Play")
 				return nil
