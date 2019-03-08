@@ -275,6 +275,30 @@ func main() {
 				performAction("Previous")
 				return nil
 			},
+		}, {
+			Name:  "pause",
+			Usage: "Pauses Playback",
+			Action: func(c *cli.Context) error {
+				performAction("Pause")
+				return nil
+			},
+		},
+		{
+			Name:  "play",
+			Usage: "Begins or ResumesPlayback",
+			Action: func(c *cli.Context) error {
+				performAction("Play")
+				return nil
+			},
+		},
+		{
+			Name:    "toggle",
+			Aliases: []string{"t"},
+			Usage:   "Toggles  Playback",
+			Action: func(c *cli.Context) error {
+				performAction("PlayPause")
+				return nil
+			},
 		},
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))

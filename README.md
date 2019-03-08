@@ -24,6 +24,9 @@ COMMANDS:
      listen       Starts in listening mode
      next, n      Skips to next song
      previous, p  Skips to the previous song
+     pause       Pauses playback
+     play           Starts or resumes Playback
+     toggle        Toggle playback
      status       Print the player status
      url          Print URL to album art
      volume, vol  Show the current player volume
