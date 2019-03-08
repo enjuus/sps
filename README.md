@@ -8,19 +8,27 @@ Install with
 
 `go get github.com/enjuus/sps`
 
-
 ## Usage
 
-```
-Usage: sps [option]
+```man
+NAME:
+   sps - Commandline interface to Spotify/GPMDP
 
-arguments:
-	play 		Play or pause the current song
-	next		Skip to the next song
-	prev 		Skip to the previous song
-	current 	Print the current song
-	listen 		Event listener that outputs the current song
-	url 		The Spotify/GPM album cover URL
-	album 		The title of the current album
-	status 		The status if a song is playing or paused
+USAGE:
+   sps [command]
+
+COMMANDS:
+     album        Print the album of the currently playing song
+     current      Returns currently playing song
+     file         Downloads the album art
+     listen       Starts in listening mode
+     next, n      Skips to next song
+     previous, p  Skips to the previous song
+     status       Print the player status
+     url          Print URL to album art
+     volume, vol  Show the current player volume
+     help, h      Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help
 ```
