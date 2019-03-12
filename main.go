@@ -305,7 +305,7 @@ func main() {
 							fmt.Println("Give a volume difference in %")
 							os.Exit(1)
 						}
-						setProp(cvol+(vdiff/100))
+						setProp(cvol-(vdiff/100))
 						return nil
 					},
 				},
