@@ -83,9 +83,18 @@ func setProp(volume float64) {
 	obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
 	call := obj.Call("org.freedesktop.DBus.Properties.Set", 0, "org.mpris.MediaPlayer2.Player", "Volume", volume)
 	if call.Err != nil {
-		log.Println(call.Err)
-		fmt.Println("No media player is currently running")
-		os.Exit(1)
+		switch call.Err.(type) {
+		case dbus.Error:
+			obj := conn.Object("org.mpris.MediaPlayer2.spotify", path)
+			call := obj.Call("org.freedesktop.DBus.Properties.Set", 0, "org.mpris.MediaPlayer2.Player", "Volume", volume)
+			if call.Err != nil {
+				fmt.Println("No media player is currently running")
+				os.Exit(1)
+			}
+		default:
+			fmt.Println("What the h* just happened?")
+			os.Exit(1)
+		}
 	}
 }
 
