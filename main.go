@@ -78,6 +78,17 @@ func retrieveInfo(info string) *dbus.Variant {
 	return &playerinfo
 }
 
+func setProp(volume float64) {
+	conn, _ := dbus.SessionBus()
+	obj := conn.Object("org.mpris.MediaPlayer2.google-play-music-desktop-player", path)
+	call := obj.Call("org.freedesktop.DBus.Properties.Set", 0, "org.mpris.MediaPlayer2.Player", "Volume", volume)
+	if call.Err != nil {
+		log.Println(call.Err)
+		fmt.Println("No media player is currently running")
+		os.Exit(1)
+	}
+}
+
 // Update metadata for the currently playing song
 func (c *metadata) current() {
 	song := retrieveInfo("Metadata")
@@ -251,11 +262,59 @@ func main() {
 		{
 			Name:    "volume",
 			Aliases: []string{"vol"},
-			Usage:   "Show the current player volume",
+			Usage:   "Show or set the current player volume, without arguments show current volume, set volume with: `sps volume <amount>`",
+			ArgsUsage: "up <amount>\n\t sps volume down <amount>",
+			Category: "volume",
+			Subcommands: []cli.Command {
+				{
+					Name: "up",
+					Usage: "Increases volume by given amount: sps volume up <amount>",
+					Category: "volume",
+					Action: func(c *cli.Context) error {
+						var cvol float64
+						S.current()
+						cvol = float64(S.Volume)/100
+						vdiff, err := strconv.ParseFloat(c.Args().First(), 64)
+						if err != nil {
+							fmt.Println("Give a volume difference in %")
+							os.Exit(1)
+						}
+						setProp(cvol+(vdiff/100))
+						return nil
+					},
+				},
+				{
+					Name: "down",
+					Usage: "Decreases volume by given amount: sps volume up <amount>",
+					Category: "volume",
+					Action: func(c *cli.Context) error {
+						var cvol float64
+						S.current()
+						cvol = float64(S.Volume)/100
+						vdiff, err := strconv.ParseFloat(c.Args().First(), 64)
+						if err != nil {
+							fmt.Println("Give a volume difference in %")
+							os.Exit(1)
+						}
+						setProp(cvol+(vdiff/100))
+						return nil
+					},
+				},
+			},
 			Action: func(c *cli.Context) error {
-				S.current()
-				fmt.Println(strconv.Itoa(S.Volume) + "%")
-				return nil
+				if c.Args().First() == "" {
+					S.current()
+					fmt.Println(strconv.Itoa(S.Volume) + "%")
+					return nil
+				} else {
+					newVol, err := strconv.ParseFloat(c.Args().First(), 64)
+					if err != nil {
+						fmt.Println("Give a volume in %")
+						os.Exit(1)
+					}
+					setProp(newVol/100)
+					return nil
+				}
 			},
 		},
 		{
