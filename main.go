@@ -117,7 +117,7 @@ func (c *metadata) current() {
 		if songData["xesam:url"].Value() != nil {
 			c.URL = songData["xesam:url"].Value().(string)
 		}
-		c.ArtURL = songData["mpris:artUrl"].Value().(string)
+		c.ArtURL = strings.Replace(songData["mpris:artUrl"].Value().(string), "https://open.spotify.com/image", "https://i.scdn.co/image", -1)
 
 		idx := strings.LastIndex(c.ArtURL, "/")
 		c.ArtFile = c.ArtURL[idx+1:]
@@ -269,43 +269,43 @@ func main() {
 			},
 		},
 		{
-			Name:    "volume",
-			Aliases: []string{"vol"},
-			Usage:   "Show or set the current player volume, without arguments show current volume, set volume with: `sps volume <amount>`",
+			Name:      "volume",
+			Aliases:   []string{"vol"},
+			Usage:     "Show or set the current player volume, without arguments show current volume, set volume with: `sps volume <amount>`",
 			ArgsUsage: "up <amount>\n\t sps volume down <amount>",
-			Category: "volume",
-			Subcommands: []cli.Command {
+			Category:  "volume",
+			Subcommands: []cli.Command{
 				{
-					Name: "up",
-					Usage: "Increases volume by given amount: sps volume up <amount>",
+					Name:     "up",
+					Usage:    "Increases volume by given amount: sps volume up <amount>",
 					Category: "volume",
 					Action: func(c *cli.Context) error {
 						var cvol float64
 						S.current()
-						cvol = float64(S.Volume)/100
+						cvol = float64(S.Volume) / 100
 						vdiff, err := strconv.ParseFloat(c.Args().First(), 64)
 						if err != nil {
 							fmt.Println("Give a volume difference in %")
 							os.Exit(1)
 						}
-						setProp(cvol+(vdiff/100))
+						setProp(cvol + (vdiff / 100))
 						return nil
 					},
 				},
 				{
-					Name: "down",
-					Usage: "Decreases volume by given amount: sps volume up <amount>",
+					Name:     "down",
+					Usage:    "Decreases volume by given amount: sps volume up <amount>",
 					Category: "volume",
 					Action: func(c *cli.Context) error {
 						var cvol float64
 						S.current()
-						cvol = float64(S.Volume)/100
+						cvol = float64(S.Volume) / 100
 						vdiff, err := strconv.ParseFloat(c.Args().First(), 64)
 						if err != nil {
 							fmt.Println("Give a volume difference in %")
 							os.Exit(1)
 						}
-						setProp(cvol-(vdiff/100))
+						setProp(cvol - (vdiff / 100))
 						return nil
 					},
 				},
@@ -321,7 +321,7 @@ func main() {
 						fmt.Println("Give a volume in %")
 						os.Exit(1)
 					}
-					setProp(newVol/100)
+					setProp(newVol / 100)
 					return nil
 				}
 			},
